@@ -1,0 +1,193 @@
+// AgentForge data model.
+// The database is the shared workspace: everything an agent did, said, found or
+// decided is persisted so a task can be fully reconstructed after the fact.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaskStatus {
+  PENDING
+  PLANNING
+  RESEARCHING
+  REVIEWING
+  NEEDS_MORE_WORK
+  SYNTHESIZING
+  COMPLETED
+  FAILED
+  FAILED_REQUIRES_REVIEW
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  tasks     Task[]
+}
+
+model Task {
+  id               String     @id @default(cuid())
+  userId           String
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  objective        String
+  status           TaskStatus @default(PENDING)
+  currentStep      String?
+  iteration        Int        @default(0)
+  agentCalls       Int        @default(0)
+  inputTokens      Int        @default(0)
+  outputTokens     Int        @default(0)
+  estimatedCostUsd Float      @default(0)
+  provider         String
+  searchTool       String
+  demoMode         Boolean    @default(false)
+  finalResult      Json?
+  error            String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  startedAt        DateTime?
+  completedAt      DateTime?
+
+  subtasks  Subtask[]
+  agentRuns AgentRun[]
+  messages  AgentMessage[]
+  findings  Finding[]
+  evidence  Evidence[]
+  decisions Decision[]
+  events    TaskEvent[]
+
+  @@index([userId, createdAt])
+}
+
+/// A unit of research work assigned by the manager (or requested by the critic).
+model Subtask {
+  id          String    @id @default(cuid())
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  assignedTo  String
+  /// Who caused this subtask to exist: "manager" or "critic".
+  origin      String
+  status      String    @default("PENDING")
+  iteration   Int
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  findings    Finding[]
+
+  @@index([taskId])
+}
+
+/// One invocation of one agent. Input/output are stored for observability.
+model AgentRun {
+  id           String    @id @default(cuid())
+  taskId       String
+  task         Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agent        String
+  purpose      String
+  iteration    Int
+  status       String
+  input        Json
+  output       Json?
+  error        String?
+  attempts     Int       @default(0)
+  inputTokens  Int       @default(0)
+  outputTokens Int       @default(0)
+  costUsd      Float     @default(0)
+  model        String?
+  durationMs   Int?
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  findings     Finding[]
+
+  @@index([taskId, startedAt])
+}
+
+model AgentMessage {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fromAgent String
+  toAgent   String
+  type      String
+  content   String
+  reason    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([taskId, createdAt])
+}
+
+model Finding {
+  id          String     @id @default(cuid())
+  taskId      String
+  task        Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  subtaskId   String?
+  subtask     Subtask?   @relation(fields: [subtaskId], references: [id], onDelete: SetNull)
+  agentRunId  String?
+  agentRun    AgentRun?  @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
+  /// FINDING or UNCERTAINTY
+  kind        String
+  title       String
+  content     String
+  confidence  String
+  iteration   Int
+  createdAt   DateTime   @default(now())
+  evidence    Evidence[]
+
+  @@index([taskId])
+}
+
+model Evidence {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  findingId String?
+  finding   Finding? @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  sourceId  String
+  title     String
+  url       String?
+  snippet   String
+  /// Name of the search tool that produced this evidence.
+  tool      String
+  /// True when the evidence came from the demo dataset rather than the live web.
+  isMock    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+/// Every orchestration decision the manager made, and whether the engine accepted it.
+model Decision {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agent     String
+  action    String
+  reason    String
+  accepted  Boolean
+  iteration Int
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskEvent {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  seq       Int
+  type      String
+  agent     String?
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, seq])
+  @@index([taskId, seq])
+}
