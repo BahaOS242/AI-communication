@@ -256,6 +256,28 @@ npm run dev                       # http://localhost:3000
 
 Production build: `npm run build && npm start`.
 
+### Running with a real model
+
+```bash
+# .env
+DEMO_MODE=false
+ANTHROPIC_API_KEY=sk-ant-...      # or AI_PROVIDER=openai + OPENAI_API_KEY
+TAVILY_API_KEY=tvly-...           # optional: live web search (otherwise the labelled demo dataset)
+```
+
+### Headless runner
+
+You can run a task from the terminal and watch the agent conversation print live. This is handy for debugging prompts against a real model:
+
+```bash
+npm run task -- "Determine whether a tourist-focused Pilates package would be viable in Nassau."
+npm run task -- --memory "..."   # keep everything in memory instead of Postgres
+```
+
+At the end it prints the final (or partial) result, plus iterations, agent calls, token usage, estimated cost and elapsed time. It exits `0` if the task completed and `2` if it stopped early.
+
+For Claude Code cloud sessions, `.claude/hooks/session-start.sh` installs dependencies, starts a local Postgres, applies the migrations and exports `DATABASE_URL`.
+
 > Tasks run in the background inside the Next.js server process, which works for `next dev` and `next start`. Serverless deployments would need a job queue (see Future improvements).
 
 ## Environment variables
@@ -296,6 +318,7 @@ npm run build
 | `unit/state-machine` | Valid and invalid transitions, terminal states, unreviewed findings, outstanding critic requests, completion criteria and the manager guard. |
 | `unit/schemas` | Every agent output schema and its cross-field rules; agent message validation. |
 | `unit/structured` | JSON extraction, retry-with-feedback, retry limits, retryable vs non-retryable errors, timeouts, usage and cost accumulation. |
+| `unit/anthropic-provider` | The real Anthropic SDK request path against a local fake API: headers, model, effort, native JSON schema for every agent schema, usage and cost parsing, fallback when a schema is rejected, mapping of 429/401 errors, refusals. |
 | `unit/tools-and-logging` | Determinism and labelling of the demo dataset, provider and tool selection from env, secret redaction. |
 | `integration/engine` | manager → researcher → critic → complete; manager → researcher → critic → researcher → critic → manager; the full demo loop; malformed responses (recovered and unrecoverable); `MAX_ITERATIONS`; `MAX_AGENT_CALLS`; agent failure; premature `COMPLETE` rejection; repeated invalid actions; per-call and whole-task timeouts; hallucinated citations; blocked research. |
 | `integration/prisma-repository` | The full loop against real Postgres, with a reconstructable history (contiguous event sequence, one decision per iteration). |

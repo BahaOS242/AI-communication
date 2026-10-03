@@ -8,6 +8,8 @@ export interface AnthropicProviderOptions {
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
   /** Use native structured outputs (`output_config.format`). Falls back automatically if rejected. */
   structuredOutputs?: boolean;
+  /** Override the API endpoint (e.g. a gateway). Defaults to the SDK's resolution. */
+  baseURL?: string;
 }
 
 /**
@@ -22,7 +24,11 @@ export class AnthropicProvider implements AIProvider {
   private structuredOutputs: boolean;
 
   constructor(options: AnthropicProviderOptions) {
-    this.client = new Anthropic({ apiKey: options.apiKey, maxRetries: 0 });
+    this.client = new Anthropic({
+      apiKey: options.apiKey,
+      maxRetries: 0,
+      ...(options.baseURL ? { baseURL: options.baseURL } : {}),
+    });
     this.model = options.model ?? "claude-opus-5-5";
     this.effort = options.effort ?? "medium";
     this.structuredOutputs = options.structuredOutputs ?? true;
