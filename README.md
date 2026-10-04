@@ -302,6 +302,10 @@ With `DEMO_MODE=true`, AgentForge runs completely offline and deterministically:
 - The script makes its decisions from workspace state. The critic rejects the first round because the evidence doesn't cover tourist pricing, the manager turns that into new assignments, and the critic approves the second round.
 - The **MockSearchTool** supplies evidence that is clearly labelled as illustrative and fictional. The UI shows a "Demo mode" badge, and the final result warns that the evidence did not come from the live web.
 
+## Hosted demo (no database)
+
+If `DATABASE_URL` is not set (as in the Vercel portfolio deployment), AgentForge switches to **in-browser mode**. Submitting an objective opens `/demo`, where the real orchestration engine runs in the visitor's browser: the same state machine, schemas, guards and limits, with the scripted demo provider, the offline dataset and the in-memory repository. It needs no server state, API keys or database, and the page says clearly that it is a demo. Deploying the full persisted version needs Postgres and a long-running server or job queue.
+
 ## Testing
 
 ```bash

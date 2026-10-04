@@ -58,18 +58,20 @@ function describe(e: Event): { tone: Tone; text: string } | null {
 }
 
 export function AgentActivity({ snapshot, live }: { snapshot: TaskSnapshot; live: boolean }) {
-  const end = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const items = snapshot.events
     .map((e) => ({ e, d: describe(e) }))
     .filter((x): x is { e: Event; d: { tone: Tone; text: string } } => x.d !== null);
 
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Scroll inside the panel only; never move the page itself.
+    const el = scroller.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [items.length]);
 
   return (
     <Card title="Agent activity" action={<span className="text-[11px] text-faint">{items.length} events</span>}>
-      <div className="scroll-thin max-h-[420px] overflow-y-auto px-2 py-2">
+      <div ref={scroller} className="scroll-thin max-h-[420px] overflow-y-auto px-2 py-2">
         <ol className="space-y-0.5">
           {items.map(({ e, d }, i) => {
             const isLast = i === items.length - 1;
@@ -93,8 +95,7 @@ export function AgentActivity({ snapshot, live }: { snapshot: TaskSnapshot; live
             );
           })}
         </ol>
-        <div ref={end} />
-      </div>
+              </div>
     </Card>
   );
 }

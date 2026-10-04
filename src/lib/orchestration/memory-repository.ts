@@ -1,8 +1,12 @@
-import { randomUUID } from "node:crypto";
 import type { TaskRecord, Workspace } from "../domain";
 import type { TaskRepository } from "./repository";
 
-/** In-memory repository used by tests (and usable for local experiments). */
+const randomUUID = () => globalThis.crypto.randomUUID();
+
+/**
+ * In-memory repository. Used by tests, the CLI runner, and the browser demo
+ * (where the whole engine runs client-side). Works in Node and browsers.
+ */
 export class InMemoryTaskRepository implements TaskRepository {
   private readonly store = new Map<string, Workspace>();
   /** Monotonic clock so ordering is stable even within the same millisecond. */

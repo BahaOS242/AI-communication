@@ -23,8 +23,21 @@ function useNow(active: boolean) {
   return now;
 }
 
-export function TaskView({ initial }: { initial: TaskSnapshot }) {
+/** Task view backed by the server (SSE stream from Postgres). */
+export function LiveTaskView({ initial }: { initial: TaskSnapshot }) {
   const { snapshot, connection } = useTaskStream(initial.task.id, initial);
+  return <TaskView snapshot={snapshot} connection={connection} />;
+}
+
+export function TaskView({
+  snapshot,
+  connection,
+  banner,
+}: {
+  snapshot: TaskSnapshot;
+  connection: "live" | "polling" | "closed";
+  banner?: React.ReactNode;
+}) {
   const { task } = snapshot;
   const live = !TERMINAL.has(task.status);
   const now = useNow(live);
@@ -60,6 +73,7 @@ export function TaskView({ initial }: { initial: TaskSnapshot }) {
         </div>
       </nav>
 
+      {banner}
       <Card className="mb-4">
         <div className="flex flex-col gap-4 p-5 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">

@@ -33,7 +33,7 @@ export interface Logger {
 }
 
 export function createLogger(
-  level: Level = (process.env.LOG_LEVEL as Level) || "info",
+  level: Level = ((typeof process !== "undefined" ? process.env?.LOG_LEVEL : undefined) as Level) || "info",
   bindings: Record<string, unknown> = {},
 ): Logger {
   const emit = (lvl: Level, msg: string, data?: Record<string, unknown>) => {

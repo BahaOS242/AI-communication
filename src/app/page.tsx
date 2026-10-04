@@ -6,6 +6,7 @@ import { getRepository, runtimeInfo } from "@/lib/orchestration/service";
 export const dynamic = "force-dynamic";
 
 async function recentTasks() {
+  if (!process.env.DATABASE_URL) return { tasks: [], error: null };
   try {
     return { tasks: await getRepository().listTasks(8), error: null };
   } catch (error) {
@@ -22,6 +23,7 @@ const FLOW = [
 
 export default async function Home() {
   const info = runtimeInfo();
+  const browserMode = !process.env.DATABASE_URL;
   const { tasks, error } = await recentTasks();
 
   return (
@@ -43,7 +45,7 @@ export default async function Home() {
         </p>
       </section>
 
-      <TaskInput />
+      <TaskInput mode={browserMode ? "browser" : "server"} />
 
       <ol className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-faint">
         {FLOW.map((s, i) => (
@@ -57,6 +59,16 @@ export default async function Home() {
         <li>↺ until approved</li>
       </ol>
 
+      {browserMode ? (
+        <p className="mt-14 rounded-xl border border-line bg-panel px-4 py-3 text-sm text-muted">
+          This hosted demo runs the real orchestration engine in your browser with a scripted model and an offline dataset of
+          fictional businesses, so it needs no API keys. To run it with Claude, a live search API and Postgres, see the{" "}
+          <a className="text-ink underline underline-offset-2" href="https://github.com/BahaOS242/AI-communication" target="_blank" rel="noreferrer">
+            README
+          </a>
+          .
+        </p>
+      ) : (
       <section className="mt-14">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Recent tasks</h2>
         {error ? (
@@ -81,6 +93,7 @@ export default async function Home() {
           </ul>
         )}
       </section>
+      )}
     </main>
   );
 }

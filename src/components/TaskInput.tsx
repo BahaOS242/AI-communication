@@ -10,7 +10,11 @@ const EXAMPLES = [
   "Assess the main risks of launching a wellness retreat business in the Bahamas.",
 ];
 
-export function TaskInput() {
+/**
+ * `mode="server"` creates a persisted task via the API.
+ * `mode="browser"` (no database configured, e.g. the hosted portfolio demo) runs it in-browser.
+ */
+export function TaskInput({ mode = "server" }: { mode?: "server" | "browser" }) {
   const router = useRouter();
   const [objective, setObjective] = useState(EXAMPLES[0]);
   const [submitting, setSubmitting] = useState(false);
@@ -19,6 +23,10 @@ export function TaskInput() {
   async function submit() {
     setSubmitting(true);
     setError(null);
+    if (mode === "browser") {
+      router.push(`/demo?q=${encodeURIComponent(objective)}`);
+      return;
+    }
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",

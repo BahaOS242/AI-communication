@@ -107,16 +107,18 @@ function MessageDetails({ message }: { message: Message }) {
 }
 
 export function AgentConversation({ snapshot, live }: { snapshot: TaskSnapshot; live: boolean }) {
-  const end = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const working = snapshot.agents.find((a) => a.state === "working");
 
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Scroll inside the panel only; never move the page itself.
+    const el = scroller.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [snapshot.messages.length, working?.agent]);
 
   return (
     <Card title="Agent conversation" action={<span className="text-[11px] text-faint">{snapshot.messages.length} messages</span>}>
-      <div className="scroll-thin max-h-[640px] space-y-1 overflow-y-auto p-3">
+      <div ref={scroller} className="scroll-thin max-h-[640px] space-y-1 overflow-y-auto p-3">
         {snapshot.messages.map((m) => {
           const from = AGENT_META[m.fromAgent];
           return (
@@ -153,8 +155,7 @@ export function AgentConversation({ snapshot, live }: { snapshot: TaskSnapshot; 
             </span>
           </div>
         )}
-        <div ref={end} />
-      </div>
+              </div>
     </Card>
   );
 }

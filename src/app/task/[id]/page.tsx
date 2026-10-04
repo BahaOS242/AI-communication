@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { TaskView } from "@/components/TaskView";
+import { LiveTaskView } from "@/components/TaskView";
 import { getRepository } from "@/lib/orchestration/service";
 import { toTaskSnapshot } from "@/lib/orchestration/snapshot";
 
@@ -9,5 +9,5 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const ws = await getRepository().getWorkspace(id);
   if (!ws) notFound();
-  return <TaskView initial={toTaskSnapshot(ws)} />;
+  return <LiveTaskView initial={toTaskSnapshot(ws)} />;
 }
